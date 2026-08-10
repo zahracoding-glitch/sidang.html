@@ -255,10 +255,15 @@
                         <span>PANGGIL & BUNYIKAN VOICE</span>
                     </button>
 
-                    <div class="bg-gradient-to-b from-amber-50 to-amber-100/40 rounded-2xl p-6 border border-amber-200 text-center space-y-2">
+                    <div class="bg-gradient-to-b from-amber-50 to-amber-100/40 rounded-2xl p-6 border border-amber-200 text-center space-y-3">
                         <span class="text-[11px] font-extrabold text-amber-800 uppercase tracking-widest">Sedang Dipanggil</span>
                         <div id="call-number" class="text-4xl font-black font-display text-amber-500">-</div>
                         <p id="call-name" class="font-extrabold text-slate-900 text-base">Tidak Ada Pemanggilan</p>
+                        <button id="btn-selesai" onclick="selesaikanAntrian()" disabled
+                            class="w-full mt-3 py-3.5 rounded-xl bg-gray-300 text-gray-500 font-extrabold text-sm flex items-center justify-center gap-2 cursor-not-allowed transition-all">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                            <span>SELESAI</span>
+                        </button>
                     </div>
                 </div>
 
@@ -427,28 +432,46 @@
             const idSidang = document.getElementById('select-petugas-ruang').value;
             const activeCall = state.dipanggil[idSidang];
 
-            document.getElementById('call-number').innerText = activeCall ? activeCall.nomor : '-';
-            document.getElementById('call-name').innerText = activeCall ? `${activeCall.nama} (${activeCall.peran})` : 'Tidak Ada Pemanggilan';
+            document.getElementById('call-number').innerText =
+                activeCall ? activeCall.nomor : '-';
+
+            document.getElementById('call-name').innerText =
+                activeCall
+                    ? `${activeCall.nama} (${activeCall.peran})`
+                    : 'Tidak Ada Pemanggilan';
+
+            const btnSelesai = document.getElementById('btn-selesai');
+
+            if (activeCall) {
+                btnSelesai.disabled = false;
+                btnSelesai.className =
+                    "w-full mt-3 py-3.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 transition-all";
+            } else {
+                btnSelesai.disabled = true;
+                btnSelesai.className =
+                    "w-full mt-3 py-3.5 rounded-xl bg-gray-300 text-gray-500 font-extrabold text-sm flex items-center justify-center gap-2 cursor-not-allowed transition-all";
+            }
 
             const tbody = document.getElementById('queue-table-body');
             tbody.innerHTML = '';
 
             if (state.antrian[idSidang].length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada antrian tersimpan</td></tr>`;
+                lucide.createIcons();
                 return;
             }
 
             state.antrian[idSidang].forEach(item => {
-                const row = `
+                tbody.innerHTML += `
                     <tr class="hover:bg-amber-50/60 transition-colors">
                         <td class="p-3 font-bold text-amber-600">${item.nomor}</td>
                         <td class="p-3">${item.nama}</td>
                         <td class="p-3 text-slate-500">${item.peran}</td>
                         <td class="p-3 text-slate-400 text-[11px]">${item.waktu}</td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
+                    </tr>`;
             });
+
+            lucide.createIcons();
         }
 
         // Panggil Next + Voice
@@ -464,6 +487,27 @@
             } else {
                 showToast("Tidak ada antrian tersisa di ruang ini.", "error");
             }
+        }
+
+        // Selesaikan antrian yang sedang dipanggil
+        function selesaikanAntrian() {
+            const idSidang = document.getElementById('select-petugas-ruang').value;
+            const activeCall = state.dipanggil[idSidang];
+
+            if (!activeCall) {
+                showToast("Tidak ada antrian yang sedang dipanggil.", "error");
+                return;
+            }
+
+            const nomorSelesai = activeCall.nomor;
+            const namaSelesai = activeCall.nama;
+
+            state.dipanggil[idSidang] = null;
+
+            renderPanelPetugas();
+            renderStatusCards();
+
+            showToast(`Antrian ${nomorSelesai} atas nama ${namaSelesai} telah selesai.`);
         }
 
         // Search Ticket Feature
